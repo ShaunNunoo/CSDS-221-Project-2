@@ -1,18 +1,34 @@
-<template>
-  <v-app id = "App">
-    <v-main>    
+<template> 
+  <v-app id = "App">    
+    <v-main> 
       <v-container fluid>  
-        <v-banner id = "bannerHeader">   
-          <v-row style="padding: 5px; align-content: center; height: 50px">
-              <v-col></v-col>
-              <v-col style="align-content: center;">
-                <subtitle-1 style="padding: 5px;"><fa icon="fa-bars" /> FRAMEWORKS</subtitle-1> 
-              </v-col>
-              <v-col style="padding: 5px; align-content: center;" >
-                <v-row style="justify-content: end; width:100%;height: ; ">
-                  <AddTask style="margin-top:12px;" @addNewTask="(newTask)=>addTask(newTask)" :taskTitles="titles"/>
-                </v-row>    
-              </v-col>
+        <AddTask   
+            v-if = openPopUp
+            :task="taskToUpdate" 
+            :updating="updating"
+            :taskTitles="titles"
+            @closePopUp="closeDialog()"
+            @updateTask="(task)=>updateTask(tableTask,task)"
+            @addNewTask="(newTask)=>addTask(newTask)"
+
+          />   
+        <v-banner id = "bannerHeader" >   
+          <v-row>
+            <v-col></v-col>
+            <v-col style="display: grid;">
+              <subtitle-1 style="align-self: center;">
+                <fa icon="fa-bars"/> 
+                FRAMEWORKS
+          </subtitle-1>
+            </v-col>
+            <v-col style="display: grid;">
+              <v-btn  
+                  id = "addButton"
+                    @click="openDialog(false)"   
+                      >
+                      <fa icon="fa-plus-circle" />&nbsp;ADD
+            </v-btn> 
+            </v-col>
           </v-row>
         </v-banner>
         <v-banner id = "bannerBody">
@@ -40,13 +56,18 @@
                   @click="completeTask(tableTask, !tableTask.isComplete)" 
                   :checked="tableTask.isComplete?true:false">
                 </td>
-                <td  class="text-center">
-                  <UpdateTask   
-                    v-if=!tableTask.isComplete  
-                    style="width: 100px;" 
-                    :task="tableTask" 
-                    @updateTask="(task)=>updateTask(tableTask,task)"/>
+                <td  class="text-center" style="padding: 15px;">
+                  <div>
+                    <v-btn
+                      v-if=!tableTask.isComplete   
+                      id="updateButton"
+                      @click="openDialog(true, tableTask)"
+                    >
                     
+                      <fa icon="fa-pen-to-square"/>&nbsp;UPDATE
+                      </v-btn>
+                  </div>
+                  <div>
                     <v-btn 
                     @click="deleteTask(tableTask)" 
                     id ="deleteButton"
@@ -54,6 +75,7 @@
                      <fa icon="fa-times-circle"/>
                       &nbsp;DELETE
                     </v-btn>
+                  </div>
               </td> 
               </tr>
 
@@ -84,6 +106,14 @@
   background-color: #1874E2;
   color:white;
   width: 100px !important;
+  justify-self: end;
+  margin-right: 10px;
+ }
+
+ #updateButton{
+  background-color: #1874E2;
+  color:white;
+  width: 100px;
  }
 
  #deleteButton{
@@ -104,7 +134,6 @@
 
 
 import AddTask from '@/components/AddTask.vue'
-import UpdateTask from '@/components/UpdateTask.vue'
 import toastr from 'toastr';
 import 'toastr/build/toastr.min.css';
 
@@ -114,21 +143,39 @@ toastr.options = {
 
 export default {
   name: 'App',
-  components: {AddTask, UpdateTask},
+  components: {AddTask},
 
  data(){
   return{
     tableTasks: [],
-    titles: []
+    titles: [],
+    taskToUpdate: null,
+    openPopUp: false,
+    updating: false
   }
  },
 
  methods:{
+  closeDialog(){
+    this.openPopUp = false;
+  },
+
+  openDialog(isUpdate, taskToUpdate){
+    if(isUpdate){
+      this.updating = true;
+      this.taskToUpdate = taskToUpdate;
+    }
+    else
+      this.updating = false;
+
+    this.openPopUp = true;
+  },
 
  addTask(newTask) {
       this.tableTasks.push(newTask);
       this.titles.push(newTask.title);
       toastr.success('Task Successfully Added!');
+      this.openPopUp = false;
 },
 
  deleteTask(task) {
@@ -142,6 +189,7 @@ updateTask(oldTask, newTask){
   var index = this.tableTasks.indexOf(oldTask);
       this.tableTasks[index] = newTask;
       toastr.success('Task Successfully Updated!');
+      this.openPopUp = false;
 },
 
  completeTask(task, isComplete){
